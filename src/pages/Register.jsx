@@ -138,22 +138,6 @@ export default function Register() {
             />
           </div>
 
-          <div>
-            <label className="block text-gray-700 mb-1">Ward (Optional)</label>
-            <select
-              name="ward_id"
-              value={formData.ward_id}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-            >
-              <option value="">Select Ward (if known)</option>
-              {wards.map((ward) => (
-                <option key={ward._id} value={ward._id}>
-                  {ward.name} - {ward.mc_admin_id?.city}
-                </option>
-              ))}
-            </select>
-          </div>
 
           {error && <p className="text-red-500">{error}</p>}
           {success && <p className="text-green-500">{success}</p>}

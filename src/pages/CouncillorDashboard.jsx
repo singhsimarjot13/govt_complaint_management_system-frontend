@@ -6,32 +6,55 @@ export default function CouncillorDashboard() {
   const [wardIssues, setWardIssues] = useState([]);
   const [unassignedIssues, setUnassignedIssues] = useState([]);
   const [wards, setWards] = useState([]);
-  const [selectedIssue, setSelectedIssue] = useState(null);
-  const [selectedWard, setSelectedWard] = useState("");
   const [loading, setLoading] = useState(true);
+  const [selectedIssue, setSelectedIssue] = useState(null);
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
+  const [showResolveModal, setShowResolveModal] = useState(false);
   const navigate = useNavigate();
+
+  const [verificationData, setVerificationData] = useState({
+    ward_id: "",
+    notes: ""
+  });
+
+  const [resolutionData, setResolutionData] = useState({
+    notes: ""
+  });
 
   useEffect(() => {
     fetchData();
   }, []);
 
   const fetchData = async () => {
+    setLoading(true);
+  
+    // Fetch ward issues
     try {
-      const [wardIssuesRes, unassignedRes, wardsRes] = await Promise.all([
-        API.get("/councillor/ward-issues"),
-        API.get("/councillor/unassigned-issues"),
-        API.get("/mc-admin/wards") // Get all wards for assignment
-      ]);
-      
+      const wardIssuesRes = await API.get("/councillor/ward-issues");
       setWardIssues(wardIssuesRes.data);
-      setUnassignedIssues(unassignedRes.data);
-      setWards(wardsRes.data);
-      setLoading(false);
     } catch (err) {
-      console.error("Failed to fetch data:", err);
-      setLoading(false);
+      console.error("Failed to fetch ward issues:", err);
     }
+  
+    // Fetch unassigned issues
+    try {
+      const unassignedIssuesRes = await API.get("/councillor/unassigned-issues");
+      setUnassignedIssues(unassignedIssuesRes.data);
+    } catch (err) {
+      console.error("Failed to fetch unassigned issues:", err);
+    }
+  
+    // Fetch wards list
+    try {
+      const wardsRes = await API.get("/councillor/wards");
+      setWards(wardsRes.data);
+    } catch (err) {
+      console.error("Failed to fetch wards:", err);
+    }
+  
+    setLoading(false);
   };
+  
 
   const handleLogout = async () => {
     try {
@@ -42,47 +65,64 @@ export default function CouncillorDashboard() {
     }
   };
 
-  const handleVerifyIssue = async (issueId, wardId) => {
+  const handleVerifyIssue = async (e) => {
+    e.preventDefault();
     try {
-      await API.put(`/councillor/issues/${issueId}/verify`, { ward_id: wardId });
-      alert("Issue verified and assigned to ward!");
-      fetchData(); // Refresh data
+      await API.put(`/councillor/issues/${selectedIssue._id}/verify`, verificationData);
+      setShowVerifyModal(false);
+      setVerificationData({  ward_id: { ward_name: "" }, notes: "" });
       setSelectedIssue(null);
+      fetchData();
+      alert("Issue verified successfully!");
     } catch (err) {
       console.error("Failed to verify issue:", err);
       alert("Failed to verify issue");
     }
   };
 
-  const handleForwardToMC = async (issueId) => {
+  const handleMarkResolved = async (e) => {
+    e.preventDefault();
     try {
-      await API.put(`/councillor/issues/${issueId}/forward`);
-      alert("Issue forwarded to MC Admin!");
-      fetchData(); // Refresh data
-    } catch (err) {
-      console.error("Failed to forward issue:", err);
-      alert("Failed to forward issue");
-    }
-  };
-
-  const handleMarkResolved = async (issueId) => {
-    try {
-      await API.put(`/councillor/issues/${issueId}/resolve`);
+      await API.put(`/councillor/issues/${selectedIssue._id}/resolve`, resolutionData);
+      setShowResolveModal(false);
+      
+      setResolutionData({ notes: "" });
+      setSelectedIssue(null);
+      fetchData();
       alert("Issue marked as resolved!");
-      fetchData(); // Refresh data
     } catch (err) {
-      console.error("Failed to mark as resolved:", err);
-      alert("Failed to mark as resolved");
+      console.error("Failed to mark issue as resolved:", err);
+      alert("Failed to mark issue as resolved");
     }
   };
 
   const getStatusColor = (status) => {
     switch (status) {
       case "open": return "bg-yellow-100 text-yellow-800";
-      case "in-progress": return "bg-blue-100 text-blue-800";
+      case "verified_by_councillor": return "bg-blue-100 text-blue-800";
+      case "assigned_to_department": return "bg-purple-100 text-purple-800";
+      case "in-progress": return "bg-orange-100 text-orange-800";
+      case "resolved_by_worker": return "bg-indigo-100 text-indigo-800";
+      case "department_resolved": return "bg-teal-100 text-teal-800";
+      case "verified_resolved": return "bg-green-100 text-green-800";
       case "resolved": return "bg-green-100 text-green-800";
       case "reopened": return "bg-red-100 text-red-800";
       default: return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getStatusText = (status) => {
+    switch (status) {
+      case "open": return "Open";
+      case "verified_by_councillor": return "Verified by Councillor";
+      case "assigned_to_department": return "Assigned to Department";
+      case "in-progress": return "Work in Progress";
+      case "resolved_by_worker": return "Work Completed";
+      case "department_resolved": return "Department Verified";
+      case "verified_resolved": return "Ready for Feedback";
+      case "resolved": return "Resolved";
+      case "reopened": return "Reopened";
+      default: return status;
     }
   };
 
@@ -124,75 +164,16 @@ export default function CouncillorDashboard() {
           </div>
           <div className="bg-white rounded-lg shadow p-6">
             <div className="text-2xl font-bold text-green-600">
-              {wardIssues.filter(i => i.status === "resolved").length}
+              {wardIssues.filter(i => i.status === "verified_resolved").length}
             </div>
-            <div className="text-gray-600">Resolved Issues</div>
+            <div className="text-gray-600">Ready for Final Verification</div>
           </div>
         </div>
 
-        {/* Unassigned Issues */}
-        {unassignedIssues.length > 0 && (
-          <div className="bg-white rounded-lg shadow mb-8">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Unassigned Issues (Need Ward Assignment)
-              </h2>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Issue
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Category
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Citizen
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {unassignedIssues.map((issue) => (
-                    <tr key={issue._id}>
-                      <td className="px-6 py-4">
-                        <div className="text-sm font-medium text-gray-900">
-                          {issue.description.substring(0, 100)}...
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {new Date(issue.createdAt).toLocaleDateString()}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {issue.category}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {issue.user_id?.name}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button
-                          onClick={() => setSelectedIssue(issue)}
-                          className="text-blue-600 hover:text-blue-900"
-                        >
-                          Assign Ward
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
         {/* Ward Issues */}
-        <div className="bg-white rounded-lg shadow">
+        <div className="bg-white rounded-lg shadow mb-8">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">My Ward Issues</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Ward Issues</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
@@ -202,13 +183,10 @@ export default function CouncillorDashboard() {
                     Issue
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Category
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Assigned Worker
+                    Created
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
@@ -218,40 +196,110 @@ export default function CouncillorDashboard() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {wardIssues.map((issue) => (
                   <tr key={issue._id}>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        {issue.description.substring(0, 100)}...
+                        {issue.description.substring(0, 50)}...
                       </div>
                       <div className="text-sm text-gray-500">
-                        By: {issue.user_id?.name} | {new Date(issue.createdAt).toLocaleDateString()}
+                        Ward: {issue.ward_id?.ward_name || "Not assigned"}
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {issue.category}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(issue.status)}`}>
-                        {issue.status}
+                        {getStatusText(issue.status)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {issue.current_worker_id?.name || "Not assigned"}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(issue.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       {issue.status === "open" && (
                         <button
-                          onClick={() => handleForwardToMC(issue._id)}
+                          onClick={() => {
+                            setSelectedIssue(issue);
+                            setVerificationData({
+                              ward_id: issue.ward_id || { ward_name: "" },
+                              notes: ""
+                            });
+                        
+                            setShowVerifyModal(true);
+                          }}
                           className="text-blue-600 hover:text-blue-900 mr-2"
                         >
-                          Forward to MC
+                          Verify
                         </button>
                       )}
-                      {issue.status === "resolved" && issue.current_worker_id && (
+                      {issue.status === "department_resolved" && (
                         <button
-                          onClick={() => handleMarkResolved(issue._id)}
+                          onClick={() => {
+                            setSelectedIssue(issue);
+                            setShowResolveModal(true);
+                          }}
                           className="text-green-600 hover:text-green-900"
                         >
-                          Verify & Close
+                          Final Verify
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Unassigned Issues */}
+        <div className="bg-white rounded-lg shadow">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">Unassigned Issues</h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Issue
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Created
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {unassignedIssues.map((issue) => (
+                  <tr key={issue._id}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">
+                        {issue.description.substring(0, 50)}...
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        Ward: Not assigned
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(issue.status)}`}>
+                        {getStatusText(issue.status)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(issue.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      {issue.status === "open" && (
+                        <button
+                          onClick={() => {
+                            setSelectedIssue(issue);
+                            setShowVerifyModal(true);
+                          }}
+                          className="text-blue-600 hover:text-blue-900 mr-2"
+                        >
+                          Verify & Assign Ward
                         </button>
                       )}
                     </td>
@@ -263,59 +311,96 @@ export default function CouncillorDashboard() {
         </div>
       </div>
 
-      {/* Ward Assignment Modal */}
-      {selectedIssue && (
+      {/* Verify Issue Modal */}
+      {showVerifyModal && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-lg max-w-md w-full m-4">
             <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Assign Ward to Issue</h3>
+              <h3 className="text-lg font-semibold text-gray-900">Verify Issue</h3>
             </div>
-            <div className="p-6 space-y-4">
+            <form onSubmit={handleVerifyIssue} className="p-6 space-y-4">
               <div>
-                <h4 className="font-medium text-gray-900 mb-2">Issue Details:</h4>
-                <p className="text-sm text-gray-600 mb-4">{selectedIssue.description}</p>
+                <label className="block text-gray-700 mb-1">Assign Ward</label>
+                <div>
+  <input
+    type="text"
+    value={verificationData.ward_id?.ward_name}
+    readOnly
+    className="w-full px-3 py-2 border rounded-lg bg-gray-100"
+  />
+</div>
+
               </div>
 
               <div>
-                <label className="block text-gray-700 mb-1">Select Ward</label>
-                <select
-                  value={selectedWard}
-                  onChange={(e) => setSelectedWard(e.target.value)}
+                <label className="block text-gray-700 mb-1">Notes</label>
+                <textarea
+                  value={verificationData.notes}
+                  onChange={(e) => setVerificationData({...verificationData, notes: e.target.value})}
                   className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  required
-                >
-                  <option value="">Select Ward</option>
-                  {wards.map((ward) => (
-                    <option key={ward._id} value={ward._id}>
-                      {ward.name}
-                    </option>
-                  ))}
-                </select>
+                  rows="3"
+                  placeholder="Add verification notes..."
+                />
               </div>
 
               <div className="flex justify-end space-x-3">
                 <button
-                  onClick={() => {
-                    setSelectedIssue(null);
-                    setSelectedWard("");
-                  }}
+                  type="button"
+                  onClick={() => setShowVerifyModal(false)}
                   className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={() => handleVerifyIssue(selectedIssue._id, selectedWard)}
-                  disabled={!selectedWard}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300"
+                  type="submit"
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
                 >
-                  Verify & Assign
+                  Verify Issue
                 </button>
               </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Final Verification Modal */}
+      {showResolveModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg max-w-md w-full m-4">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Final Verification</h3>
             </div>
+            <form onSubmit={handleMarkResolved} className="p-6 space-y-4">
+              <div>
+                <label className="block text-gray-700 mb-1">Verification Notes</label>
+                <textarea
+                  value={resolutionData.notes}
+                  onChange={(e) => setResolutionData({...resolutionData, notes: e.target.value})}
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  rows="3"
+                  placeholder="Add final verification notes..."
+                />
+              </div>
+
+              <div className="flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setShowResolveModal(false)}
+                  className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                >
+                  Mark as Resolved
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
     </div>
   );
 }
-

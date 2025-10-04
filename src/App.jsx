@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import Login from "./pages/login";
 import Register from "./pages/Register";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
-import MCAdminDashboard from "./pages/mcdashboard";
+import MCAdminDashboard from "./pages/MCAdminDashboard";
 import MLADashboard from "./pages/mladashboard";
 import CouncillorDashboard from "./pages/CouncillorDashboard";
 import DepartmentDashboard from "./pages/DepartmentDashboard";

@@ -4,16 +4,21 @@ import { useNavigate } from "react-router-dom";
 
 export default function CitizenDashboard() {
   const [issues, setIssues] = useState([]);
+  const [allIssues, setAllIssues] = useState([]);
   const [wards, setWards] = useState([]);
+  const [cities, setCities] = useState([]);
   const [categories, setCategories] = useState([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [imageUploading, setImageUploading] = useState(false);
+  const [activeTab, setActiveTab] = useState('my-issues');
   const navigate = useNavigate();
 
   const [newIssue, setNewIssue] = useState({
     category: "",
     description: "",
+    city: "",
     ward_id: "",
     photos: [],
     gps_coordinates: {}
@@ -30,6 +35,12 @@ export default function CitizenDashboard() {
 
   const fetchData = async () => {
     try {
+      // Fetch cities first
+      console.log("Fetching cities...");
+      const citiesRes = await API.get("/citizen/cities");
+      console.log("Cities data:", citiesRes.data);
+      setCities(citiesRes.data);
+
       // Fetch wards first and set immediately (ensures ward dropdowns render ASAP)
       console.log("Fetching wards...");
       const wardsRes = await API.get("/citizen/wards");
@@ -41,6 +52,12 @@ export default function CitizenDashboard() {
       const issuesRes = await API.get("/citizen/issues");
       console.log("Issues data:", issuesRes.data);
       setIssues(issuesRes.data);
+
+      // Fetch all issues for voting
+      console.log("Fetching all issues for voting...");
+      const allIssuesRes = await API.get("/citizen/all-issues");
+      console.log("All issues data:", allIssuesRes.data);
+      setAllIssues(allIssuesRes.data);
 
       // Finally fetch categories and set
       console.log("Fetching categories...");
@@ -63,6 +80,68 @@ export default function CitizenDashboard() {
     }
   };
 
+  // Handle city selection and fetch wards
+  const handleCityChange = async (city) => {
+    setNewIssue({...newIssue, city, ward_id: ""});
+    if (city) {
+      try {
+        const wardsRes = await API.get(`/citizen/wards/${city}`);
+        setWards(wardsRes.data);
+      } catch (err) {
+        console.error("Failed to fetch wards:", err);
+        setWards([]);
+      }
+    } else {
+      setWards([]);
+    }
+  };
+
+  // Handle image upload
+  const handleImageUpload = async (file) => {
+    if (!file) return;
+    
+    setImageUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      const response = await API.post('/citizen/upload-image', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      const newPhotos = [...newIssue.photos, response.data.imageUrl];
+      setNewIssue({...newIssue, photos: newPhotos});
+    } catch (err) {
+      console.error("Failed to upload image:", err);
+      alert("Failed to upload image");
+    } finally {
+      setImageUploading(false);
+    }
+  };
+
+  // Get GPS coordinates
+  const getCurrentLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const coordinates = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          };
+          setNewIssue({...newIssue, gps_coordinates: coordinates});
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+          alert("Unable to get your location. Please enable location services.");
+        }
+      );
+    } else {
+      alert("Geolocation is not supported by this browser.");
+    }
+  };
+
   const handleCreateIssue = async (e) => {
     e.preventDefault();
     try {
@@ -71,6 +150,7 @@ export default function CitizenDashboard() {
       setNewIssue({
         category: "",
         description: "",
+        city: "",
         ward_id: "",
         photos: [],
         gps_coordinates: {}
@@ -105,13 +185,81 @@ export default function CitizenDashboard() {
     }
   };
 
+  const handleVote = async (issueId, voteType) => {
+    try {
+      const response = await API.post(`/citizen/issues/${issueId}/vote`, { vote_type: voteType });
+      
+      // Update the specific issue in allIssues array
+      setAllIssues(prevIssues => 
+        prevIssues.map(issue => 
+          issue._id === issueId 
+            ? { 
+                ...issue, 
+                voteCounts: response.data.voteCounts, 
+                userVote: response.data.userVote 
+              }
+            : issue
+        )
+      );
+      
+      alert(`Vote recorded: ${voteType === 'exists' ? 'Issue Exists' : 'Issue Does Not Exist'}`);
+    } catch (err) {
+      console.error("Failed to vote:", err);
+      alert("Failed to vote on issue");
+    }
+  };
+
+  const handleRemoveVote = async (issueId) => {
+    try {
+      const response = await API.delete(`/citizen/issues/${issueId}/vote`);
+      
+      // Update the specific issue in allIssues array
+      setAllIssues(prevIssues => 
+        prevIssues.map(issue => 
+          issue._id === issueId 
+            ? { 
+                ...issue, 
+                voteCounts: response.data.voteCounts, 
+                userVote: response.data.userVote 
+              }
+            : issue
+        )
+      );
+      
+      alert("Vote removed successfully!");
+    } catch (err) {
+      console.error("Failed to remove vote:", err);
+      alert("Failed to remove vote");
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case "open": return "bg-yellow-100 text-yellow-800";
-      case "in-progress": return "bg-blue-100 text-blue-800";
+      case "verified_by_councillor": return "bg-blue-100 text-blue-800";
+      case "assigned_to_department": return "bg-purple-100 text-purple-800";
+      case "in-progress": return "bg-orange-100 text-orange-800";
+      case "resolved_by_worker": return "bg-indigo-100 text-indigo-800";
+      case "department_resolved": return "bg-teal-100 text-teal-800";
+      case "verified_resolved": return "bg-green-100 text-green-800";
       case "resolved": return "bg-green-100 text-green-800";
       case "reopened": return "bg-red-100 text-red-800";
       default: return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getStatusText = (status) => {
+    switch (status) {
+      case "open": return "Open";
+      case "verified_by_councillor": return "Verified by Councillor";
+      case "assigned_to_department": return "Assigned to Department";
+      case "in-progress": return "Work in Progress";
+      case "resolved_by_worker": return "Work Completed";
+      case "department_resolved": return "Department Verified";
+      case "verified_resolved": return "Ready for Feedback";
+      case "resolved": return "Resolved";
+      case "reopened": return "Reopened";
+      default: return status;
     }
   };
 
@@ -149,37 +297,95 @@ export default function CitizenDashboard() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="text-2xl font-bold text-blue-600">{issues.length}</div>
-            <div className="text-gray-600">Total Issues</div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="text-2xl font-bold text-yellow-600">
-              {issues.filter(i => i.status === "open" || i.status === "in-progress").length}
-            </div>
-            <div className="text-gray-600">Pending</div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="text-2xl font-bold text-green-600">
-              {issues.filter(i => i.status === "resolved").length}
-            </div>
-            <div className="text-gray-600">Resolved</div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="text-2xl font-bold text-red-600">
-              {issues.filter(i => i.status === "reopened").length}
-            </div>
-            <div className="text-gray-600">Reopened</div>
+        {/* Tab Navigation */}
+        <div className="bg-white rounded-lg shadow mb-8">
+          <div className="border-b border-gray-200">
+            <nav className="-mb-px flex space-x-8 px-6">
+              <button
+                onClick={() => setActiveTab('my-issues')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'my-issues'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                My Issues
+              </button>
+              <button
+                onClick={() => setActiveTab('vote-issues')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'vote-issues'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Vote on Issues
+              </button>
+            </nav>
           </div>
         </div>
 
-        {/* Issues List */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">My Issues</h2>
-          </div>
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          {activeTab === 'my-issues' ? (
+            <>
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="text-2xl font-bold text-blue-600">{issues.length}</div>
+                <div className="text-gray-600">My Issues</div>
+              </div>
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="text-2xl font-bold text-yellow-600">
+                  {issues.filter(i => ["open", "verified_by_councillor", "assigned_to_department", "in-progress", "resolved_by_worker", "department_resolved"].includes(i.status)).length}
+                </div>
+                <div className="text-gray-600">In Progress</div>
+              </div>
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="text-2xl font-bold text-green-600">
+                  {issues.filter(i => ["verified_resolved", "resolved"].includes(i.status)).length}
+                </div>
+                <div className="text-gray-600">Resolved</div>
+              </div>
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="text-2xl font-bold text-red-600">
+                  {issues.filter(i => i.status === "reopened").length}
+                </div>
+                <div className="text-gray-600">Reopened</div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="text-2xl font-bold text-blue-600">{allIssues.length}</div>
+                <div className="text-gray-600">Issues to Vote</div>
+              </div>
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="text-2xl font-bold text-green-600">
+                  {allIssues.reduce((sum, issue) => sum + (issue.voteCounts?.exists || 0), 0)}
+                </div>
+                <div className="text-gray-600">Total "Exists" Votes</div>
+              </div>
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="text-2xl font-bold text-red-600">
+                  {allIssues.reduce((sum, issue) => sum + (issue.voteCounts?.notExists || 0), 0)}
+                </div>
+                <div className="text-gray-600">Total "Not Exists" Votes</div>
+              </div>
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="text-2xl font-bold text-purple-600">
+                  {allIssues.filter(issue => issue.userVote).length}
+                </div>
+                <div className="text-gray-600">Your Votes</div>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* My Issues List */}
+        {activeTab === 'my-issues' && (
+          <div className="bg-white rounded-lg shadow">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900">My Issues</h2>
+            </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -209,7 +415,7 @@ export default function CitizenDashboard() {
                         {issue.description.substring(0, 50)}...
                       </div>
                       <div className="text-sm text-gray-500">
-                        Ward: {issue.ward_id?.name || "Not assigned"}
+                        Ward: {issue.ward_id?.ward_name}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -217,14 +423,14 @@ export default function CitizenDashboard() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(issue.status)}`}>
-                        {issue.status}
+                        {getStatusText(issue.status)}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(issue.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      {issue.status === "resolved" && !issue.feedback_rating && (
+                      {issue.status === "verified_resolved" && !issue.feedback_rating && (
                         <button
                           onClick={() => setSelectedIssue(issue)}
                           className="text-blue-600 hover:text-blue-900 mr-2"
@@ -232,13 +438,31 @@ export default function CitizenDashboard() {
                           Give Feedback
                         </button>
                       )}
-                      {issue.status === "resolved" && issue.feedback_rating && (
-                        <button
-                          onClick={() => handleReopenIssue(issue._id, "Not satisfied with resolution")}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          Reopen
-                        </button>
+                      {issue.status === "resolved" || issue.status==="verified_resolved" && issue.feedback_rating && (
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleReopenIssue(issue._id, "Not satisfied with resolution")}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            Reopen
+                          </button>
+                        </div>
+                      )}
+                      {issue.status === "resolved" || issue.status==="verified_resolved" && !issue.feedback_rating && (
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => setSelectedIssue(issue)}
+                            className="text-blue-600 hover:text-blue-900"
+                          >
+                            Give Feedback
+                          </button>
+                          <button
+                            onClick={() => handleReopenIssue(issue._id, "Not satisfied with resolution")}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            Reopen
+                          </button>
+                        </div>
                       )}
                     </td>
                   </tr>
@@ -247,12 +471,125 @@ export default function CitizenDashboard() {
             </table>
           </div>
         </div>
+        )}
+
+        {/* Vote on Issues List */}
+        {activeTab === 'vote-issues' && (
+          <div className="bg-white rounded-lg shadow">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900">Vote on Other Citizens' Issues</h2>
+              <p className="text-sm text-gray-600 mt-1">Help verify if issues reported by other citizens actually exist in your area</p>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Issue
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Category
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Ward
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Votes
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Your Vote
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {allIssues.map((issue) => (
+                    <tr key={issue._id}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">
+                          {issue.description.substring(0, 50)}...
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          By: {issue.user_id?.name}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {issue.category}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {issue.ward_id?.ward_name || "Not assigned"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(issue.status)}`}>
+                          {getStatusText(issue.status)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <div className="flex space-x-4">
+                          <div className="text-green-600">
+                            <span className="font-semibold">{issue.voteCounts?.exists || 0}</span>
+                            <span className="text-xs ml-1">Exists</span>
+                          </div>
+                          <div className="text-red-600">
+                            <span className="font-semibold">{issue.voteCounts?.notExists || 0}</span>
+                            <span className="text-xs ml-1">Not Exists</span>
+                          </div>
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          Total: {issue.voteCounts?.total || 0} votes
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          {issue.userVote ? (
+                            <div className="flex items-center space-x-2">
+                              <span className={`px-2 py-1 text-xs rounded-full ${
+                                issue.userVote === 'exists' 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-red-100 text-red-800'
+                              }`}>
+                                {issue.userVote === 'exists' ? 'Exists' : 'Not Exists'}
+                              </span>
+                              <button
+                                onClick={() => handleRemoveVote(issue._id)}
+                                className="text-gray-400 hover:text-red-600 text-xs"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex space-x-1">
+                              <button
+                                onClick={() => handleVote(issue._id, 'exists')}
+                                className="px-3 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600"
+                              >
+                                Exists
+                              </button>
+                              <button
+                                onClick={() => handleVote(issue._id, 'not_exists')}
+                                className="px-3 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"
+                              >
+                                Not Exists
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Create Issue Modal */}
       {showCreateForm && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg max-w-md w-full m-4">
+          <div className="bg-white rounded-lg shadow-lg max-w-lg w-full m-4 max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900">Report New Issue</h3>
             </div>
@@ -273,6 +610,41 @@ export default function CitizenDashboard() {
               </div>
 
               <div>
+                <label className="block text-gray-700 mb-1">City</label>
+                <select
+                  value={newIssue.city}
+                  onChange={(e) => handleCityChange(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  required
+                >
+                  <option value="">Select City</option>
+                  {cities.map((city) => (
+                    <option key={city} value={city}>{city}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-gray-700 mb-1">Ward</label>
+                <select
+                  value={newIssue.ward_id}
+                  onChange={(e) => setNewIssue({...newIssue, ward_id: e.target.value})}
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  disabled={!newIssue.city}
+                >
+                  <option value="">Select Ward</option>
+                  <option value="">not known</option>
+                  {wards.map((ward) => (
+                    <option key={ward._id} value={ward._id}>
+                      {ward.ward_name}
+                    </option>
+                    
+                  ))}
+
+                </select>
+              </div>
+
+              <div>
                 <label className="block text-gray-700 mb-1">Description</label>
                 <textarea
                   value={newIssue.description}
@@ -284,19 +656,36 @@ export default function CitizenDashboard() {
               </div>
 
               <div>
-                <label className="block text-gray-700 mb-1">Ward (Optional)</label>
-                <select
-                  value={newIssue.ward_id}
-                  onChange={(e) => setNewIssue({...newIssue, ward_id: e.target.value})}
+                <label className="block text-gray-700 mb-1">Upload Image</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleImageUpload(e.target.files[0])}
                   className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  disabled={imageUploading}
+                />
+                {imageUploading && <p className="text-sm text-blue-600">Uploading...</p>}
+                {newIssue.photos.length > 0 && (
+                  <div className="mt-2">
+                    <p className="text-sm text-green-600">Images uploaded: {newIssue.photos.length}</p>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-gray-700 mb-1">Location</label>
+                <button
+                  type="button"
+                  onClick={getCurrentLocation}
+                  className="w-full px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-400"
                 >
-                  <option value="">Select Ward (if known)</option>
-                  {wards.map((ward) => (
-                    <option key={ward._id} value={ward._id}>
-                      {ward.ward_name}
-                    </option>
-                  ))}
-                </select>
+                  Get Current Location
+                </button>
+                {newIssue.gps_coordinates.latitude && (
+                  <p className="text-sm text-green-600 mt-1">
+                    Location: {newIssue.gps_coordinates.latitude.toFixed(6)}, {newIssue.gps_coordinates.longitude.toFixed(6)}
+                  </p>
+                )}
               </div>
 
               <div className="flex justify-end space-x-3">
