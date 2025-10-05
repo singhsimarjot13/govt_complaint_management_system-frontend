@@ -1,8 +1,13 @@
 import axios from "axios";
 
+// Prefer env base URL; fallback to Vite proxy '/api'
+const baseURL = import.meta?.env?.VITE_API_BASE || 
+  (typeof window !== 'undefined' && window.__API_BASE__) || 
+  "/api";
+
 const API = axios.create({
-  baseURL: "http://localhost:5000/api", // backend URL
-  withCredentials: true, // cookies allow kare
+  baseURL,
+  withCredentials: true,
 });
 
 export default API;

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import API from "../services/api";
 import { useNavigate } from "react-router-dom";
+import Leaderboard from "../components/Leaderboard";
+import "../theme/punjab-theme.css";
 
 export default function CitizenDashboard() {
   const [issues, setIssues] = useState([]);
@@ -13,6 +15,11 @@ export default function CitizenDashboard() {
   const [loading, setLoading] = useState(true);
   const [imageUploading, setImageUploading] = useState(false);
   const [activeTab, setActiveTab] = useState('my-issues');
+  const [reopenDisabled, setReopenDisabled] = useState({});
+  const [reopenCountdown, setReopenCountdown] = useState({});
+  const [citizenLeaderboard, setCitizenLeaderboard] = useState([]);
+  const [userRank, setUserRank] = useState(null);
+  const [wardsLeaderboard, setWardsLeaderboard] = useState([]);
   const navigate = useNavigate();
 
   const [newIssue, setNewIssue] = useState({
@@ -64,10 +71,46 @@ export default function CitizenDashboard() {
       const categoriesRes = await API.get("/citizen/categories");
       console.log("Categories data:", categoriesRes.data);
       setCategories(categoriesRes.data);
+
+      // Fetch leaderboard data
+      await fetchLeaderboardData();
+      
       setLoading(false);
     } catch (err) {
       console.error("Failed to fetch data:", err);
       setLoading(false);
+    }
+  };
+
+  const fetchLeaderboardData = async () => {
+    try {
+      // Mock leaderboard data - in real implementation, this would come from APIs
+      const mockCitizenLeaderboard = [
+        { rank: 1, name: 'Rajinder Singh', city: 'Ludhiana', verifiedCount: 15, avatar: '👑' },
+        { rank: 2, name: 'Gurpreet Kaur', city: 'Amritsar', verifiedCount: 12, avatar: '👑' },
+        { rank: 3, name: 'Harpreet Singh', city: 'Patiala', verifiedCount: 10, avatar: '👑' },
+        { rank: 4, name: 'Manjit Kaur', city: 'Jalandhar', verifiedCount: 8, avatar: '👤' },
+        { rank: 5, name: 'Balwinder Singh', city: 'Bathinda', verifiedCount: 7, avatar: '👤' }
+      ];
+      
+      const mockWardsLeaderboard = [
+        { rank: 1, ward: 'Ward 1', city: 'Ludhiana', resolvedCount: 45, totalIssues: 50 },
+        { rank: 2, ward: 'Ward 3', city: 'Amritsar', resolvedCount: 38, totalIssues: 42 },
+        { rank: 3, ward: 'Ward 2', city: 'Patiala', resolvedCount: 32, totalIssues: 38 },
+        { rank: 4, ward: 'Ward 5', city: 'Jalandhar', resolvedCount: 28, totalIssues: 35 },
+        { rank: 5, ward: 'Ward 4', city: 'Bathinda', resolvedCount: 22, totalIssues: 28 }
+      ];
+
+      setCitizenLeaderboard(mockCitizenLeaderboard);
+      setWardsLeaderboard(mockWardsLeaderboard);
+      
+      // Find user rank (mock - in real implementation, get from API)
+      const userVerifiedCount = issues.filter(issue => issue.status === 'verified_by_councillor').length;
+      const userRank = mockCitizenLeaderboard.findIndex(user => user.verifiedCount <= userVerifiedCount) + 1;
+      setUserRank(userRank || mockCitizenLeaderboard.length + 1);
+      
+    } catch (error) {
+      console.error('Failed to fetch leaderboard data:', error);
     }
   };
 
@@ -176,12 +219,46 @@ export default function CitizenDashboard() {
 
   const handleReopenIssue = async (issueId, reason) => {
     try {
-      await API.put(`/citizen/issues/${issueId}/reopen`, { reason });
+      // Disable reopen button for 10 seconds
+      setReopenDisabled(prev => ({ ...prev, [issueId]: true }));
+      
+      // Start countdown
+      let countdown = 10;
+      setReopenCountdown(prev => ({ ...prev, [issueId]: countdown }));
+      
+      const countdownInterval = setInterval(() => {
+        countdown--;
+        setReopenCountdown(prev => ({ ...prev, [issueId]: countdown }));
+        
+        if (countdown <= 0) {
+          clearInterval(countdownInterval);
+          setReopenDisabled(prev => ({ ...prev, [issueId]: false }));
+          setReopenCountdown(prev => ({ ...prev, [issueId]: 0 }));
+        }
+      }, 1000);
+
+      // Send reopen request with object_id to update existing record
+      const issue = issues.find(i => i._id === issueId);
+      const payload = {
+        reason,
+        object_id: issue?._id // Include object_id to update existing record
+      };
+      
+      await API.put(`/citizen/issues/${issueId}/reopen`, payload);
+      
+      // Show success message
       alert("Issue reopened successfully!");
-      fetchData(); // Refresh issues
+      
+      // Refresh data
+      fetchData();
+      
     } catch (err) {
       console.error("Failed to reopen issue:", err);
       alert("Failed to reopen issue");
+      
+      // Re-enable button on error
+      setReopenDisabled(prev => ({ ...prev, [issueId]: false }));
+      setReopenCountdown(prev => ({ ...prev, [issueId]: 0 }));
     }
   };
 
@@ -298,14 +375,14 @@ export default function CitizenDashboard() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Tab Navigation */}
-        <div className="bg-white rounded-lg shadow mb-8">
+        <div className="punjab-card mb-8">
           <div className="border-b border-gray-200">
             <nav className="-mb-px flex space-x-8 px-6">
               <button
                 onClick={() => setActiveTab('my-issues')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
                   activeTab === 'my-issues'
-                    ? 'border-blue-500 text-blue-600'
+                    ? 'border-punjab-indigo text-punjab-indigo'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
@@ -315,11 +392,21 @@ export default function CitizenDashboard() {
                 onClick={() => setActiveTab('vote-issues')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
                   activeTab === 'vote-issues'
-                    ? 'border-blue-500 text-blue-600'
+                    ? 'border-punjab-indigo text-punjab-indigo'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
                 Vote on Issues
+              </button>
+              <button
+                onClick={() => setActiveTab('leaderboards')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'leaderboards'
+                    ? 'border-punjab-indigo text-punjab-indigo'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Leaderboards
               </button>
             </nav>
           </div>
@@ -430,7 +517,7 @@ export default function CitizenDashboard() {
                       {new Date(issue.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      {issue.status === "verified_resolved" && !issue.feedback_rating && (
+                      {issue.status === "resolved" && !issue.feedback_rating && (
                         <button
                           onClick={() => setSelectedIssue(issue)}
                           className="text-blue-600 hover:text-blue-900 mr-2"
@@ -442,9 +529,10 @@ export default function CitizenDashboard() {
                         <div className="flex space-x-2">
                           <button
                             onClick={() => handleReopenIssue(issue._id, "Not satisfied with resolution")}
-                            className="text-red-600 hover:text-red-900"
+                            disabled={reopenDisabled[issue._id]}
+                            className={`text-red-600 hover:text-red-900 ${reopenDisabled[issue._id] ? 'opacity-50 cursor-not-allowed' : ''}`}
                           >
-                            Reopen
+                            {reopenDisabled[issue._id] ? `Reopen (${reopenCountdown[issue._id]}s)` : 'Reopen'}
                           </button>
                         </div>
                       )}
@@ -458,9 +546,10 @@ export default function CitizenDashboard() {
                           </button>
                           <button
                             onClick={() => handleReopenIssue(issue._id, "Not satisfied with resolution")}
-                            className="text-red-600 hover:text-red-900"
+                            disabled={reopenDisabled[issue._id]}
+                            className={`text-red-600 hover:text-red-900 ${reopenDisabled[issue._id] ? 'opacity-50 cursor-not-allowed' : ''}`}
                           >
-                            Reopen
+                            {reopenDisabled[issue._id] ? `Reopen (${reopenCountdown[issue._id]}s)` : 'Reopen'}
                           </button>
                         </div>
                       )}
@@ -584,6 +673,41 @@ export default function CitizenDashboard() {
             </div>
           </div>
         )}
+
+        {/* Leaderboards Tab */}
+        {activeTab === 'leaderboards' && (
+          <div className="space-y-8">
+            {/* Personal Rank Card */}
+            {userRank && (
+              <div className="punjab-card p-6">
+                <h3 className="text-xl font-bold punjab-text-primary mb-4">Your Ranking</h3>
+                <div className="flex items-center space-x-4">
+                  <div className="text-4xl font-bold punjab-text-secondary">#{userRank}</div>
+                  <div>
+                    <div className="text-lg font-semibold">Citizen Leaderboard</div>
+                    <div className="text-gray-600">Based on verified issues by councillors</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Citizen Leaderboard */}
+            <Leaderboard
+              title="Top Citizens"
+              subtitle="Most verified issues by councillors"
+              data={citizenLeaderboard}
+              type="citizen"
+            />
+
+            {/* Wards Leaderboard */}
+            <Leaderboard
+              title="Top Wards"
+              subtitle="Wards with highest resolution rates"
+              data={wardsLeaderboard}
+              type="wards"
+            />
+          </div>
+        )}
       </div>
 
       {/* Create Issue Modal */}
@@ -625,7 +749,7 @@ export default function CitizenDashboard() {
               </div>
 
               <div>
-                <label className="block text-gray-700 mb-1">Ward</label>
+                <label className="block text-gray-700 mb-1">Ward (if known)</label>
                 <select
                   value={newIssue.ward_id}
                   onChange={(e) => setNewIssue({...newIssue, ward_id: e.target.value})}
@@ -633,7 +757,6 @@ export default function CitizenDashboard() {
                   disabled={!newIssue.city}
                 >
                   <option value="">Select Ward</option>
-                  <option value="">not known</option>
                   {wards.map((ward) => (
                     <option key={ward._id} value={ward._id}>
                       {ward.ward_name}

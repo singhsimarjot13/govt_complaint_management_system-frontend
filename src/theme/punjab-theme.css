@@ -1,0 +1,282 @@
+/* Punjab Theme CSS Variables */
+:root {
+  /* Punjab Color Palette */
+  --punjab-indigo: #0E4A63;
+  --punjab-mustard: #F6C85F;
+  --punjab-green: #1E8B57;
+  --punjab-white: #FFFFFF;
+  --punjab-red: #C72C48;
+  
+  /* Extended palette for gradients and accents */
+  --punjab-indigo-light: #1a6b7a;
+  --punjab-mustard-light: #f8d47a;
+  --punjab-green-light: #2ba66a;
+  --punjab-red-light: #d94a5c;
+  
+  /* Neutral colors */
+  --punjab-gray-50: #f9fafb;
+  --punjab-gray-100: #f3f4f6;
+  --punjab-gray-200: #e5e7eb;
+  --punjab-gray-300: #d1d5db;
+  --punjab-gray-400: #9ca3af;
+  --punjab-gray-500: #6b7280;
+  --punjab-gray-600: #4b5563;
+  --punjab-gray-700: #374151;
+  --punjab-gray-800: #1f2937;
+  --punjab-gray-900: #111827;
+  
+  /* Priority colors */
+  --priority-critical: #dc2626;
+  --priority-high: #ea580c;
+  --priority-medium: #d97706;
+  --priority-low: #16a34a;
+  
+  /* Status colors */
+  --status-open: #fbbf24;
+  --status-verified: #3b82f6;
+  --status-assigned: #8b5cf6;
+  --status-progress: #f97316;
+  --status-resolved: #10b981;
+  --status-reopened: #ef4444;
+  
+  /* Typography */
+  --font-family-primary: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --font-family-punjabi: 'Noto Sans Gurmukhi', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+  
+  /* Border radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+/* Punjab-themed utility classes */
+.punjab-bg-primary {
+  background-color: var(--punjab-indigo);
+}
+
+.punjab-bg-secondary {
+  background-color: var(--punjab-mustard);
+}
+
+.punjab-bg-accent {
+  background-color: var(--punjab-green);
+}
+
+.punjab-text-primary {
+  color: var(--punjab-indigo);
+}
+
+.punjab-text-secondary {
+  color: var(--punjab-mustard);
+}
+
+.punjab-text-accent {
+  color: var(--punjab-green);
+}
+
+/* Punjab-themed buttons */
+.punjab-btn-primary {
+  background-color: var(--punjab-indigo);
+  color: var(--punjab-white);
+  border: none;
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  font-weight: 600;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.punjab-btn-primary:hover {
+  background-color: var(--punjab-indigo-light);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.punjab-btn-secondary {
+  background-color: var(--punjab-mustard);
+  color: var(--punjab-indigo);
+  border: none;
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  font-weight: 600;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.punjab-btn-secondary:hover {
+  background-color: var(--punjab-mustard-light);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Punjab-themed cards */
+.punjab-card {
+  background-color: var(--punjab-white);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--punjab-gray-200);
+  transition: all 0.2s ease;
+}
+
+.punjab-card:hover {
+  box-shadow: var(--shadow-xl);
+  transform: translateY(-2px);
+}
+
+/* Priority badges */
+.priority-critical {
+  background-color: #fef2f2;
+  color: var(--priority-critical);
+  border: 1px solid #fecaca;
+}
+
+.priority-high {
+  background-color: #fff7ed;
+  color: var(--priority-high);
+  border: 1px solid #fed7aa;
+}
+
+.priority-medium {
+  background-color: #fffbeb;
+  color: var(--priority-medium);
+  border: 1px solid #fde68a;
+}
+
+.priority-low {
+  background-color: #f0fdf4;
+  color: var(--priority-low);
+  border: 1px solid #bbf7d0;
+}
+
+/* Status badges */
+.status-open {
+  background-color: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.status-verified {
+  background-color: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #93c5fd;
+}
+
+.status-assigned {
+  background-color: #f3e8ff;
+  color: #7c3aed;
+  border: 1px solid #c4b5fd;
+}
+
+.status-progress {
+  background-color: #fed7aa;
+  color: #c2410c;
+  border: 1px solid #fdba74;
+}
+
+.status-resolved {
+  background-color: #d1fae5;
+  color: #065f46;
+  border: 1px solid #6ee7b7;
+}
+
+.status-reopened {
+  background-color: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+}
+
+/* Punjab phulkari pattern background */
+.punjab-phulkari-bg {
+  background-image: 
+    radial-gradient(circle at 25% 25%, var(--punjab-mustard) 2px, transparent 2px),
+    radial-gradient(circle at 75% 75%, var(--punjab-green) 1px, transparent 1px),
+    radial-gradient(circle at 50% 50%, var(--punjab-red) 1px, transparent 1px);
+  background-size: 20px 20px, 15px 15px, 10px 10px;
+  background-position: 0 0, 10px 10px, 5px 5px;
+  opacity: 0.1;
+}
+
+/* Responsive design utilities */
+@media (max-width: 768px) {
+  .punjab-card {
+    border-radius: var(--radius-lg);
+  }
+  
+  .punjab-btn-primary,
+  .punjab-btn-secondary {
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 0.875rem;
+  }
+}
+
+/* Accessibility improvements */
+.punjab-focus:focus {
+  outline: 2px solid var(--punjab-indigo);
+  outline-offset: 2px;
+}
+
+.punjab-focus:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Loading skeleton */
+.punjab-skeleton {
+  background: linear-gradient(90deg, var(--punjab-gray-200) 25%, var(--punjab-gray-100) 50%, var(--punjab-gray-200) 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Punjab-themed form elements */
+.punjab-input {
+  border: 2px solid var(--punjab-gray-300);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-sm) var(--spacing-md);
+  transition: all 0.2s ease;
+  font-family: var(--font-family-primary);
+}
+
+.punjab-input:focus {
+  border-color: var(--punjab-indigo);
+  box-shadow: 0 0 0 3px rgba(14, 74, 99, 0.1);
+  outline: none;
+}
+
+.punjab-select {
+  border: 2px solid var(--punjab-gray-300);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--punjab-white);
+  transition: all 0.2s ease;
+  font-family: var(--font-family-primary);
+}
+
+.punjab-select:focus {
+  border-color: var(--punjab-indigo);
+  box-shadow: 0 0 0 3px rgba(14, 74, 99, 0.1);
+  outline: none;
+}

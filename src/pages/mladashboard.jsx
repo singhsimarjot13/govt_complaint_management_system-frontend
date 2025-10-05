@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import API from "../services/api";
 import { useNavigate } from "react-router-dom";
+import "../theme/punjab-theme.css";
 
 export default function MLADashboard() {
   const [profile, setProfile] = useState(null);
@@ -8,6 +9,9 @@ export default function MLADashboard() {
   const [wardStats, setWardStats] = useState({});
   const [issues, setIssues] = useState([]);
   const [selectedWard, setSelectedWard] = useState("");
+  const [selectedWards, setSelectedWards] = useState([]);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [analyticsData, setAnalyticsData] = useState({});
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -37,10 +41,40 @@ export default function MLADashboard() {
       setWardStats(stats);
       
       setProfile(profileRes.data);
+      
+      // Fetch analytics data
+      await fetchAnalyticsData();
+      
       setLoading(false);
     } catch (err) {
       console.error("Failed to fetch data:", err);
       setLoading(false);
+    }
+  };
+
+  const fetchAnalyticsData = async () => {
+    try {
+      // Mock analytics data - in real implementation, this would come from APIs
+      const mockAnalytics = {
+        departmentPerformance: [
+          { department: 'Roads', resolved: 45, total: 60, efficiency: 75 },
+          { department: 'Water', resolved: 32, total: 40, efficiency: 80 },
+          { department: 'Sewerage', resolved: 28, total: 35, efficiency: 80 },
+          { department: 'Electricity', resolved: 20, total: 30, efficiency: 67 }
+        ],
+        councillorPerformance: [
+          { councillor: 'Rajinder Singh', ward: 'Ward 1', resolved: 25, total: 30, efficiency: 83 },
+          { councillor: 'Gurpreet Kaur', ward: 'Ward 2', resolved: 20, total: 25, efficiency: 80 },
+          { councillor: 'Harpreet Singh', ward: 'Ward 3', resolved: 18, total: 22, efficiency: 82 }
+        ],
+        trends: {
+          raised: [10, 15, 12, 18, 20, 16, 14],
+          resolved: [8, 12, 10, 15, 18, 14, 12]
+        }
+      };
+      setAnalyticsData(mockAnalytics);
+    } catch (error) {
+      console.error('Failed to fetch analytics data:', error);
     }
   };
 
@@ -81,6 +115,56 @@ export default function MLADashboard() {
     }
   };
 
+  const handleWardSelection = (wardId) => {
+    if (selectedWards.includes(wardId)) {
+      setSelectedWards(selectedWards.filter(id => id !== wardId));
+    } else {
+      setSelectedWards([...selectedWards, wardId]);
+    }
+  };
+
+  const handleExportCSV = () => {
+    if (selectedWards.length === 0) {
+      alert('Please select at least one ward to export data');
+      return;
+    }
+
+    // Create CSV data
+    const csvData = [];
+    selectedWards.forEach(wardId => {
+      const ward = wards.find(w => w._id === wardId);
+      const stats = wardStats[wardId];
+      csvData.push({
+        'Ward Name': ward?.name || 'Unknown',
+        'Councillor': ward?.councillor_id?.name || 'Not Assigned',
+        'MC Admin': ward?.mc_admin_id?.name || 'N/A',
+        'Total Issues': stats?.totalIssues || 0,
+        'Resolved Issues': stats?.resolvedIssues || 0,
+        'Pending Issues': stats?.pendingIssues || 0,
+        'Resolution Rate': stats?.totalIssues > 0 ? 
+          Math.round((stats.resolvedIssues / stats.totalIssues) * 100) : 0
+      });
+    });
+
+    // Convert to CSV
+    const headers = Object.keys(csvData[0]);
+    const csvContent = [
+      headers.join(','),
+      ...csvData.map(row => headers.map(header => row[header]).join(','))
+    ].join('\n');
+
+    // Download CSV
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `mla-analytics-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case "open": return "bg-yellow-100 text-yellow-800";
@@ -106,14 +190,14 @@ export default function MLADashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">MLA Dashboard</h1>
+              <h1 className="text-2xl font-bold punjab-text-primary">MLA Dashboard</h1>
               <p className="text-sm text-gray-600">
                 Constituency: Punjab | Role: Member of Legislative Assembly
               </p>
             </div>
             <button
               onClick={handleLogout}
-              className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
+              className="punjab-btn-primary bg-red-500 hover:bg-red-600"
             >
               Logout
             </button>
@@ -148,7 +232,38 @@ export default function MLADashboard() {
           </div>
         </div>
 
-        {/* Ward Management */}
+        {/* Tab Navigation */}
+        <div className="punjab-card mb-8">
+          <div className="border-b border-gray-200">
+            <nav className="-mb-px flex space-x-8 px-6">
+              <button
+                onClick={() => setActiveTab('overview')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'overview'
+                    ? 'border-punjab-indigo text-punjab-indigo'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Overview
+              </button>
+              <button
+                onClick={() => setActiveTab('analytics')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'analytics'
+                    ? 'border-punjab-indigo text-punjab-indigo'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Analytics
+              </button>
+            </nav>
+          </div>
+        </div>
+
+        {/* Overview Tab */}
+        {activeTab === 'overview' && (
+          <>
+            {/* Ward Management */}
         <div className="bg-white rounded-lg shadow mb-8">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">My Constituency Wards</h2>
@@ -361,6 +476,96 @@ export default function MLADashboard() {
             </div>
           </div>
         </div>
+          </>
+        )}
+
+        {/* Analytics Tab */}
+        {activeTab === 'analytics' && (
+          <div className="space-y-8">
+            {/* Ward Selection for Analytics */}
+            <div className="punjab-card p-6">
+              <h3 className="text-lg font-semibold punjab-text-primary mb-4">Select Wards for Analytics</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+                {wards.map((ward) => (
+                  <label key={ward._id} className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedWards.includes(ward._id)}
+                      onChange={() => handleWardSelection(ward._id)}
+                      className="rounded border-gray-300 text-punjab-indigo focus:ring-punjab-indigo"
+                    />
+                    <span className="text-sm text-gray-700">{ward.name}</span>
+                  </label>
+                ))}
+              </div>
+              <button
+                onClick={handleExportCSV}
+                disabled={selectedWards.length === 0}
+                className="punjab-btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Export CSV
+              </button>
+            </div>
+
+            {/* Department Performance */}
+            <div className="punjab-card p-6">
+              <h3 className="text-lg font-semibold punjab-text-primary mb-4">Department Performance</h3>
+              <div className="space-y-4">
+                {analyticsData.departmentPerformance?.map((dept, index) => (
+                  <div key={index} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                    <div>
+                      <div className="font-semibold text-gray-900">{dept.department}</div>
+                      <div className="text-sm text-gray-600">
+                        {dept.resolved} of {dept.total} resolved
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold punjab-text-accent">{dept.efficiency}%</div>
+                      <div className="text-sm text-gray-600">Efficiency</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Councillor Performance */}
+            <div className="punjab-card p-6">
+              <h3 className="text-lg font-semibold punjab-text-primary mb-4">Councillor Performance</h3>
+              <div className="space-y-4">
+                {analyticsData.councillorPerformance?.map((councillor, index) => (
+                  <div key={index} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                    <div>
+                      <div className="font-semibold text-gray-900">{councillor.councillor}</div>
+                      <div className="text-sm text-gray-600">{councillor.ward}</div>
+                      <div className="text-sm text-gray-600">
+                        {councillor.resolved} of {councillor.total} resolved
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold punjab-text-accent">{councillor.efficiency}%</div>
+                      <div className="text-sm text-gray-600">Efficiency</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Trends Chart */}
+            <div className="punjab-card p-6">
+              <h3 className="text-lg font-semibold punjab-text-primary mb-4">Resolution Trends</h3>
+              <div className="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
+                <div className="text-center">
+                  <div className="text-4xl mb-2">📊</div>
+                  <div className="text-gray-600">Trend chart would be displayed here</div>
+                  <div className="text-sm text-gray-500 mt-2">
+                    Raised: {analyticsData.trends?.raised?.join(', ')} | 
+                    Resolved: {analyticsData.trends?.resolved?.join(', ')}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Information Notice */}
         <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">

@@ -49,15 +49,15 @@ export default function DepartmentDashboard() {
 
   const fetchData = async () => {
     try {
-      const [issuesRes, workersRes, departmentsRes] = await Promise.all([
-        API.get("/department/issues"),
-        API.get("/department/workers"),
-        API.get("/department/departments")
-      ]);
-
+      const issuesRes = await API.get("/department/issues");
       setIssues(issuesRes.data);
+
+      const workersRes = await API.get("/department/workers");
       setWorkers(workersRes.data);
+
+      const departmentsRes = await API.get("/department/departments");
       setDepartments(departmentsRes.data);
+
       setLoading(false);
     } catch (err) {
       console.error("Failed to fetch data:", err);

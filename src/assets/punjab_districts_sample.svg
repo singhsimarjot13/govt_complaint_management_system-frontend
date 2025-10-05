@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <defs>
+    <style>
+      .outline { fill: #e5e7eb; stroke: #1f2937; stroke-width: 1; }
+    </style>
+  </defs>
+  <!-- Simplified non-rectangular shapes for sample use only -->
+  <path id="amritsar" class="outline" d="M80 90 L160 70 L190 110 L150 150 L90 130 Z" />
+  <path id="jalandhar" class="outline" d="M180 260 L260 240 L290 280 L250 320 L200 300 Z" />
+  <path id="ludhiana" class="outline" d="M140 190 L240 170 L270 210 L210 250 L150 210 Z" />
+  <path id="patiala" class="outline" d="M320 150 L410 130 L430 175 L360 195 L315 165 Z" />
+  <path id="bathinda" class="outline" d="M390 250 L490 230 L515 270 L455 295 L405 265 Z" />
+  <path id="mohali" class="outline" d="M340 350 L440 330 L465 370 L405 395 L355 365 Z" />
+  <path id="firozpur" class="outline" d="M500 340 L600 325 L620 365 L560 392 L505 360 Z" />
+  <path id="sangrur" class="outline" d="M300 400 L400 380 L420 420 L355 445 L305 415 Z" />
+</svg>
+
