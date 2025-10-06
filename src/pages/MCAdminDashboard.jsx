@@ -567,15 +567,19 @@ export default function MCAdminDashboard() {
                             Transfer
                           </button>
                         )}
-                        <button
-                          onClick={() => {
-                            setSelectedIssue(issue);
-                            setShowPriorityModal(true);
-                          }}
-                          className="text-orange-600 hover:text-orange-900"
-                        >
-                          Override Priority
-                        </button>
+                        {[      "verified_by_councillor",
+      "reopened",
+      "assigned_to_department"].includes(issue.status) && (
+                          <button
+                            onClick={() => {
+                              setSelectedIssue(issue);
+                              setShowPriorityModal(true);
+                            }}
+                            className="text-orange-600 hover:text-orange-900"
+                          >
+                            Override Priority
+                          </button>
+                        )}
                         {!["verified_by_councillor", "reopened", "assigned_to_department", "in-progress", "resolved_by_worker"].includes(issue.status) && (
                           <span className="text-gray-500 text-sm">No Actions Available</span>
                         )}
@@ -883,7 +887,6 @@ export default function MCAdminDashboard() {
                   <option value="Low">Low</option>
                   <option value="Medium">Medium</option>
                   <option value="High">High</option>
-                  <option value="Critical">Critical</option>
                 </select>
               </div>
 

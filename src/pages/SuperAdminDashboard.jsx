@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import API from "../services/api";
 import { useNavigate } from "react-router-dom";
-import HeatmapDistrict from "../components/HeatmapDistrict";
+// import HeatmapDistrict from "../components/HeatmapDistrict";
 import "../theme/punjab-theme.css";
+import PunjabMap from "../assets/Punjab.jpg";
 
 export default function SuperAdminDashboard() {
   const [message, setMessage] = useState("");
@@ -193,13 +194,12 @@ export default function SuperAdminDashboard() {
         {/* Overview Tab */}
         {activeTab === 'overview' && (
           <>
-            {/* Punjab Heatmap */}
-            <div className="punjab-card p-6 mb-8">
+            {/* Punjab Image */}
+            <div className="punjab-card p-4 mb-8">
               <h2 className="text-2xl font-bold punjab-text-primary mb-4">Punjab District Overview</h2>
-              <HeatmapDistrict 
-                districts={districts}
-                onDistrictClick={(district) => console.log('District clicked:', district)}
-              />
+              <div className="w-full h-80 md:h-96 lg:h-[28rem] overflow-hidden rounded-2xl bg-white relative">
+                <img src={PunjabMap} alt="Punjab Map" className="absolute inset-0 w-full h-full object-contain object-center punjab-zoom-slow" />
+              </div>
             </div>
 
             {/* Global Stats */}

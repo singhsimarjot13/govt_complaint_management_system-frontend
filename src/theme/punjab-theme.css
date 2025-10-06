@@ -280,3 +280,30 @@
   box-shadow: 0 0 0 3px rgba(14, 74, 99, 0.1);
   outline: none;
 }
+
+/* Gentle zoom + pan animation for Punjab map (apply on a wrapper around img) */
+.punjab-zoom-slow {
+  animation: punjabZoom 14s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* If the same element is also .rotated, switch to a rotate-preserving animation */
+.punjab-zoom-slow.rotated {
+  animation-name: punjabZoomRot;
+}
+
+@keyframes punjabZoom {
+  0% { transform: translateX(0%) translateY(0%) scale(1); }
+  20% { transform: translateX(-2%) translateY(-1%) scale(1.12); }
+  50% { transform: translateX(0%) translateY(0%) scale(1.56); }
+  80% { transform: translateX(2%) translateY(1%) scale(1.12); }
+  100% { transform: translateX(0%) translateY(0%) scale(1); }
+}
+
+@keyframes punjabZoomRot {
+  0% { transform:  translateX(0%) translateY(0%) scale(1); }
+  20% { transform:  translateX(-24%) translateY(-1%) scale(1.12); }
+  50% { transform:  translateX(0%) translateY(0%) scale(1.56); }
+  80% { transform:  translateX(24%) translateY(1%) scale(1.12); }
+  100% { transform:  translateX(0%) translateY(0%) scale(1); }
+}

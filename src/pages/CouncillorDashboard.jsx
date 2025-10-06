@@ -175,7 +175,6 @@ export default function CouncillorDashboard() {
 
   const getPriorityColor = (priority) => {
     switch (priority) {
-      case "Critical": return "priority-critical";
       case "High": return "priority-high";
       case "Medium": return "priority-medium";
       case "Low": return "priority-low";
@@ -185,7 +184,6 @@ export default function CouncillorDashboard() {
 
   const getPriorityIcon = (priority) => {
     switch (priority) {
-      case "Critical": return "🔴";
       case "High": return "🟠";
       case "Medium": return "🟡";
       case "Low": return "🟢";
@@ -319,26 +317,18 @@ export default function CouncillorDashboard() {
                           Final Verify
                         </button>
                       )}
-                      <button
-                        onClick={() => {
-                          setSelectedIssue(issue);
-                          setShowPriorityModal(true);
-                        }}
-                        className="text-orange-600 hover:text-orange-900 mr-2"
-                      >
-                        Set Priority
-                      </button>
-                      {issue.status === "verified_by_councillor" && (
+                      {!["resolved_by_worker","department_resolved","verified_resolved","resolved"].includes(issue.status) && (
                         <button
                           onClick={() => {
                             setSelectedIssue(issue);
-                            setShowForwardModal(true);
+                            setShowPriorityModal(true);
                           }}
-                          className="text-purple-600 hover:text-purple-900"
+                          className="text-orange-600 hover:text-orange-900 mr-2"
                         >
-                          Forward to MC Admin
+                          Set Priority
                         </button>
                       )}
+
                     </td>
                   </tr>
                 ))}
@@ -521,7 +511,6 @@ export default function CouncillorDashboard() {
                   <option value="Low">Low</option>
                   <option value="Medium">Medium</option>
                   <option value="High">High</option>
-                  <option value="Critical">Critical</option>
                 </select>
               </div>
 

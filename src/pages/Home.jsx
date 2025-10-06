@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API from '../services/api';
-import HeatmapDistrict from '../components/HeatmapDistrict';
+// import HeatmapDistrict from '../components/HeatmapDistrict';
 import Leaderboard from '../components/Leaderboard';
 import PunjabPhulkari from '../components/PunjabPhulkari';
 import '../theme/punjab-theme.css';
-
+import PunjabMap from "../assets/Punjab.jpg";
 export default function Home() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -17,6 +17,13 @@ export default function Home() {
   const [districts, setDistricts] = useState([]);
   const [citizenLeaderboard, setCitizenLeaderboard] = useState([]);
   const [mcAdminLeaderboard, setMcAdminLeaderboard] = useState([]);
+  const departments = [
+    { name: 'Roads', icon: '🛣️', desc: 'Potholes, damaged streets, sidewalks and signage' },
+    { name: 'Sewerage', icon: '🚰', desc: 'Drain blockage, overflow, manhole issues' },
+    { name: 'Water', icon: '💧', desc: 'Water supply disruption, leakage, low pressure' },
+    { name: 'Electricity', icon: '⚡', desc: 'Streetlights, wiring hazards, power faults' },
+    { name: 'Other', icon: '🧰', desc: 'Any civic concerns not listed above' },
+  ];
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -166,18 +173,39 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Punjab Heatmap */}
+      {/* Punjab Image */}
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white/10 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-white mb-4">Punjab District Overview</h2>
-            <p className="text-xl text-white/90">Click on any district to view detailed analytics</p>
+            <p className="text-xl text-white/90">Explore performance and activity across the state</p>
           </div>
-          <div className="punjab-card p-8">
-            <HeatmapDistrict 
-              districts={districts}
-              onDistrictClick={handleDistrictClick}
-            />
+          <div className="punjab-card p-2">
+            <div className="w-full h-80 md:h-96 lg:h-[28rem] overflow-hidden rounded-2xl bg-white relative">
+              <img src={PunjabMap} alt="Punjab Map" className="absolute inset-0 w-full h-full object-contain object-center punjab-zoom-slow rotated" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Departments Section */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-white">Departments</h2>
+            <p className="text-white/90">Key civic services handled by departments</p>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-8">
+            {departments.map((d) => (
+              <div
+                key={d.name}
+                className="punjab-card p-8 text-center rounded-2xl bg-white/90 hover:shadow-xl hover:-translate-y-1 hover:ring-2 hover:ring-punjab-indigo/40 transition-all"
+              >
+                <div className="text-6xl mb-4">{d.icon}</div>
+                <div className="text-xl font-bold text-gray-900">{d.name}</div>
+                <p className="mt-2 text-base text-gray-600 leading-relaxed">{d.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
