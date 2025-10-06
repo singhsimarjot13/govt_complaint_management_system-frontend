@@ -15,7 +15,7 @@ export default function Login() {
 
     try {
       // backend returns JWT in HTTP-only cookie
-      const res = await API.post("/auth/login", { email, password, role });
+      const res = await API.post("/auth/login", { email, password, role },{withCredentials:true});
 
       if (res.data.success) {
         // redirect based on role (no token stored in localStorage)
