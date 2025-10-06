@@ -11,6 +11,7 @@ import CouncillorDashboard from "./pages/CouncillorDashboard";
 import DepartmentDashboard from "./pages/DepartmentDashboard";
 import WorkerDashboard from "./pages/WorkerDashboard";
 import CitizenDashboard from "./pages/CitizenDashboard";
+import ErrorBoundary from "./components/ErrorBoundary";
 import API from "./services/api"; // Axios instance
 
 // Role-based private route
@@ -43,44 +44,46 @@ const PrivateRoute = ({ element: Element, allowedRoles }) => {
 
 export default function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/about-punjab" element={<AboutPunjab />} />
+    <ErrorBoundary>
+      <Router>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/about-punjab" element={<AboutPunjab />} />
 
-        <Route
-          path="/super-admin/dashboard"
-          element={<PrivateRoute element={SuperAdminDashboard} allowedRoles={["super_admin"]} />}
-        />
-        <Route
-          path="/mc-admin/dashboard"
-          element={<PrivateRoute element={MCAdminDashboard} allowedRoles={["mc_admin"]} />}
-        />
-        <Route
-          path="/mla/dashboard"
-          element={<PrivateRoute element={MLADashboard} allowedRoles={["mla"]} />}
-        />
-        <Route
-          path="/councillor/dashboard"
-          element={<PrivateRoute element={CouncillorDashboard} allowedRoles={["councillor"]} />}
-        />
-        <Route
-          path="/department/dashboard"
-          element={<PrivateRoute element={DepartmentDashboard} allowedRoles={["department_admin"]} />}
-        />
-        <Route
-          path="/worker/dashboard"
-          element={<PrivateRoute element={WorkerDashboard} allowedRoles={["worker"]} />}
-        />
-        <Route
-          path="/citizen/dashboard"
-          element={<PrivateRoute element={CitizenDashboard} allowedRoles={["citizen"]} />}
-        />
+          <Route
+            path="/super-admin/dashboard"
+            element={<PrivateRoute element={SuperAdminDashboard} allowedRoles={["super_admin"]} />}
+          />
+          <Route
+            path="/mc-admin/dashboard"
+            element={<PrivateRoute element={MCAdminDashboard} allowedRoles={["mc_admin"]} />}
+          />
+          <Route
+            path="/mla/dashboard"
+            element={<PrivateRoute element={MLADashboard} allowedRoles={["mla"]} />}
+          />
+          <Route
+            path="/councillor/dashboard"
+            element={<PrivateRoute element={CouncillorDashboard} allowedRoles={["councillor"]} />}
+          />
+          <Route
+            path="/department/dashboard"
+            element={<PrivateRoute element={DepartmentDashboard} allowedRoles={["department_admin"]} />}
+          />
+          <Route
+            path="/worker/dashboard"
+            element={<PrivateRoute element={WorkerDashboard} allowedRoles={["worker"]} />}
+          />
+          <Route
+            path="/citizen/dashboard"
+            element={<PrivateRoute element={CitizenDashboard} allowedRoles={["citizen"]} />}
+          />
 
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
-    </Router>
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </Router>
+    </ErrorBoundary>
   );
 }

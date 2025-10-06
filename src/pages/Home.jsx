@@ -26,25 +26,55 @@ export default function Home() {
   const fetchHomeData = async () => {
     try {
       setLoading(true);
-      // Fetch stats first
-      const statsRes = await API.get('/super-admin/dashboard');
+      
+      // Set fallback data first
       setStats({
-        totalIssues: statsRes.data?.totalIssues || 0,
-        totalResolved: statsRes.data?.resolvedIssues || 0,
-        activeWorkers: statsRes.data?.activeWorkers || 0,
-        totalDepartments: statsRes.data?.totalDepartments || 0
+        totalIssues: 0,
+        totalResolved: 0,
+        activeWorkers: 0,
+        totalDepartments: 0
       });
+      setDistricts([]);
+      setCitizenLeaderboard([]);
+      setMcAdminLeaderboard([]);
 
-      // Then fetch districts (MC Admins)
-      const districtsRes = await API.get('/super-admin/mcs');
-      setDistricts(districtsRes.data || []);
+      // Try to fetch data with individual error handling
+      try {
+        const statsRes = await API.get('/super-admin/dashboard');
+        setStats({
+          totalIssues: statsRes.data?.totalIssues || 0,
+          totalResolved: statsRes.data?.resolvedIssues || 0,
+          activeWorkers: statsRes.data?.activeWorkers || 0,
+          totalDepartments: statsRes.data?.totalDepartments || 0
+        });
+      } catch (error) {
+        console.warn('Failed to fetch stats:', error.message);
+        // Keep fallback data
+      }
 
-      // Fetch leaderboards sequentially
-      const citizenLbRes = await API.get('/super-admin/leaderboard/citizens');
-      setCitizenLeaderboard(citizenLbRes.data?.citizens || []);
+      try {
+        const districtsRes = await API.get('/super-admin/mcs');
+        setDistricts(districtsRes.data || []);
+      } catch (error) {
+        console.warn('Failed to fetch districts:', error.message);
+        // Keep empty array
+      }
 
-      const mcAdminLbRes = await API.get('/super-admin/leaderboard/mcadmins');
-      setMcAdminLeaderboard(mcAdminLbRes.data?.mcAdmins || []);
+      try {
+        const citizenLbRes = await API.get('/super-admin/leaderboard/citizens');
+        setCitizenLeaderboard(citizenLbRes.data?.citizens || []);
+      } catch (error) {
+        console.warn('Failed to fetch citizen leaderboard:', error.message);
+        // Keep empty array
+      }
+
+      try {
+        const mcAdminLbRes = await API.get('/super-admin/leaderboard/mcadmins');
+        setMcAdminLeaderboard(mcAdminLbRes.data?.mcAdmins || []);
+      } catch (error) {
+        console.warn('Failed to fetch MC admin leaderboard:', error.message);
+        // Keep empty array
+      }
     } catch (error) {
       console.error('Failed to fetch home data:', error);
     } finally {
