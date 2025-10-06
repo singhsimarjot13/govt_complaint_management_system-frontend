@@ -41,13 +41,16 @@ export default function AboutPunjab() {
         </section>
 
         <section className="punjab-card p-6">
-          <h3 className="text-xl font-semibold punjab-text-primary mb-2">The Punjab Theme</h3>
-          <ul className="list-disc list-inside text-gray-700 space-y-1">
-            <li>Royal blue and mustard with green accents</li>
-            <li>Clear labels and accessible typography</li>
-            <li>Responsive layouts and smooth transitions</li>
-          </ul>
-        </section>
+  <h3 className="text-xl font-semibold punjab-text-primary mb-2">About Punjab Portal</h3>
+  <ul className="list-disc list-inside text-gray-700 space-y-1">
+    <li>Provides a platform for citizens to submit complaints and grievances</li>
+    <li>Ensures transparency and accountability in local governance</li>
+    <li>Tracks status of submitted complaints in real-time</li>
+    <li>Offers easy access to municipal, district, and state-level departments</li>
+    <li>Aims to improve civic services and responsiveness across Punjab</li>
+  </ul>
+</section>
+
       </main>
 
       <footer className="bg-gray-50 border-t">

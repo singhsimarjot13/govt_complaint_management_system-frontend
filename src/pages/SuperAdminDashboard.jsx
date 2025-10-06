@@ -198,7 +198,7 @@ export default function SuperAdminDashboard() {
             <div className="punjab-card p-4 mb-8">
               <h2 className="text-2xl font-bold punjab-text-primary mb-4">Punjab District Overview</h2>
               <div className="w-full h-80 md:h-96 lg:h-[28rem] overflow-hidden rounded-2xl bg-white relative">
-                <img src={PunjabMap} alt="Punjab Map" className="absolute inset-0 w-full h-full object-contain object-center punjab-zoom-slow" />
+                <img src={PunjabMap} alt="Punjab Map" className="absolute inset-0 w-full h-full object-contain object-center punjab-zoom-slow rotated" />
               </div>
             </div>
 
