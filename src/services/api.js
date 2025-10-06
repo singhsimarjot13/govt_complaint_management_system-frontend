@@ -3,9 +3,6 @@ import axios from "axios";
 // Determine API base URL based on environment
 const getBaseURL = () => {
   // In production, use the backend URL directly
-  if (import.meta.env.PROD) {
-    return import.meta.env.VITE_API_BASE || 'https://govt-complaint-management-system.vercel.app/api';
-  }
   // In development, use Vite proxy
   return '/api';
 };
